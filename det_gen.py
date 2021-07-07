@@ -10,30 +10,6 @@ from tensorflow.keras.utils import Sequence
 from matplotlib import pyplot as plt
 
 
-# def strong_aug(p=0.75):
-#     return Compose([
-#         ShiftScaleRotate(scale_limit=0.1, rotate_limit=90),
-#         Transpose(),
-#         # IAAAffine(shear=0.1),
-#         # IAAPerspective(),
-#         Cutout(num_holes=20, max_h_size=8, max_w_size=8),
-#         HorizontalFlip(),
-#         VerticalFlip(),
-#         GaussNoise(),
-#         JpegCompression(),
-#         # RandomShadow(shadow_roi=(0, 0, 1, 1), p=0.75),
-#         OneOf([
-#             MotionBlur(),
-#             GaussianBlur()
-#         ]),
-#         OneOf([
-#             ToGray(),
-#             ToSepia()
-#         ]),
-#         RandomBrightnessContrast(brightness_limit=0.75, p=0.75)
-#     ], bbox_params=BboxParams("pascal_voc", label_fields=["category_id"], min_area=0.0, min_visibility=0.5), p=p)
-
-
 class CSVGenerator(Sequence):
     def __init__(self, annotations_path,
                  img_height,
@@ -98,7 +74,7 @@ class CSVGenerator(Sequence):
         batch = self.images_list[idx * self.batch_size: (idx + 1) * self.batch_size]
 
         imgs = np.empty((self.batch_size, self.img_height, self.img_width, 3), dtype=np.float32)
-        batch_centers = np.zeros((self.batch_size, self.out_height // 4, self.out_width // 4, self.num_classes + 2),
+        batch_centers = np.zeros((self.batch_size, self.out_height, self.out_width, self.num_classes + 2),
                                  dtype=np.float32)
 
         for i in range(len(batch)):
@@ -141,30 +117,30 @@ class CSVGenerator(Sequence):
             img /= 255
             imgs[i] = img                
 
-            centers = np.zeros((self.out_height // 4, self.out_width // 4, self.num_classes), dtype=np.float32)
-            scales = np.zeros((self.out_height // 4, self.out_width // 4, 2), dtype=np.float32)
+            centers = np.zeros((self.out_height, self.out_width, self.num_classes), dtype=np.float32)
+            scales = np.zeros((self.out_height, self.out_width, 2), dtype=np.float32)
 
             for j, bbox in enumerate(annotations):
                 if (bbox[0] < 0): 
                     bbox[0] = 0
                 if (bbox[1] < 0):
                     bbox[1] = 0 
-                if (bbox[2] >= self.out_width // 4): 
-                    bbox[2] = self.out_width // 4 - 1
-                if (bbox[3] >= self.out_height // 4):
-                    bbox[3] = self.out_height // 4 - 1
+                if (bbox[2] >= self.out_width):
+                    bbox[2] = self.out_width - 1
+                if (bbox[3] >= self.out_height):
+                    bbox[3] = self.out_height - 1
                 if  (bbox[2] - bbox[0] == 0) or (bbox[3] - bbox[1] == 0) or (bbox[2] < bbox[0]) or (bbox[3] < bbox[1]):
                     continue
 
                 h = bbox[3] - bbox[1]
-                sc_h = h / (self.out_height // 4)
+                sc_h = h / (self.out_height)
                 if sc_h > 1.0:
                     sc_h = 1.0
                 if sc_h < 0:
                     sc_h = 0
                     
                 w = bbox[2] - bbox[0]
-                sc_w = w / (self.out_width // 4)
+                sc_w = w / (self.out_width)
                 if sc_w > 1.0:
                     sc_w = 1.0
                 if sc_w < 0:
@@ -183,7 +159,7 @@ class CSVGenerator(Sequence):
 
                 y, x = np.ogrid[rhmin:rhmax, rwmin:rwmax]
 
-                e = np.exp(-((x * x / (2 * (w / 4.0) * (w / 4.0)) + (y * y / (2 * (h / 4.0) * (h / 4.0))))))
+                e = np.exp(-((x * x / (2 * (w / 12.0) * (w / 12.0)) + (y * y / (2 * (h / 12.0) * (h / 12.0))))))
 
                 xmin = bbox[0]
                 ymin = bbox[1]

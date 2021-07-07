@@ -96,23 +96,38 @@ def make_net(input_shape):
     bn_36 = bottleneck_asymmetric(128, 4)(bn_35)
     bn_37 = bottleneck_reg(128, 4, (16, 16))(bn_36)
 
-    bn_UpSampling = ConvBNRelu(16, (3, 3))(bn_37)
-    bn_UpSampling = Conv2DTranspose(16, (3, 3), (2, 2), padding='same', use_bias=False, kernel_initializer='he_normal')(bn_UpSampling)
+    bn_UpSampling = ConvBNRelu(64, (3, 3))(bn_37)
+    bn_UpSampling = Conv2DTranspose(64, (3, 3), (2, 2), padding='same', use_bias=False, kernel_initializer='he_normal')(bn_UpSampling)
     bn_UpSampling = BatchNormalization()(bn_UpSampling)
     bn_UpSampling = ReLU()(bn_UpSampling)
 
     bn_41 = bottleneck_reg(64, 4)(bn_UpSampling)
     bn_42 = bottleneck_reg(64, 4)(bn_41)
 
-    out = Conv2D(3, (1, 1), use_bias=False, padding='same', activation='sigmoid')(bn_42)
+    bn_UpSampling = ConvBNRelu(32, (3, 3))(bn_42)
+    bn_UpSampling = Conv2DTranspose(32, (3, 3), (2, 2), padding='same', use_bias=False, kernel_initializer='he_normal')(bn_UpSampling)
+    bn_UpSampling = BatchNormalization()(bn_UpSampling)
+    bn_UpSampling = ReLU()(bn_UpSampling)
+
+    bn_43 = bottleneck_reg(16, 4)(bn_UpSampling)
+
+    bn_UpSampling = ConvBNRelu(16, (3, 3))(bn_43)
+    bn_UpSampling = Conv2DTranspose(16, (3, 3), (2, 2), padding='same', use_bias=False, kernel_initializer='he_normal')(
+        bn_UpSampling)
+    bn_UpSampling = BatchNormalization()(bn_UpSampling)
+    bn_UpSampling = ReLU()(bn_UpSampling)
+
+    bn_51 = bottleneck_reg(16, 4)(bn_UpSampling)
+
+    out = Conv2D(3, (1, 1), use_bias=False, padding='same', activation='sigmoid')(bn_51)
 
     return Model(img, out)
 
 
 if __name__ == '__main__':
-    net = make_net((256, 256, 3))
+    net = make_net((240, 320, 3))
     net.summary()
-    test = np.zeros((1000, 256, 256, 3), np.float32)
+    test = np.zeros((1000, 240, 320, 3), np.float32)
 
     net.predict(test, batch_size=1, verbose=1)
     net.predict(test, batch_size=1, verbose=1)
